@@ -91,9 +91,9 @@ fi
 easyrsa_setup(){
 #Download and unzip EasyRSA to start building your CA(Certificate Authority)
 #sleep 0.2s && echo -e "${lb}visit ${lp}https://github.com/OpenVPN/easy-rsa/releases${lb} and grep the latest .tgz package link and paste it below.${nc}"
-#sleep 0.2s && echo -e "${lb}latest version download link should look like that: ${lp}https://github.com/OpenVPN/easy-rsa/releases/download/${lr}v3.0.8${lp}/EasyRSA-${lr}3.0.8${lp}.tgz ${nc}"
+#sleep 0.2s && echo -e "${lb}latest version download link should look like that: ${lp}https://github.com/OpenVPN/easy-rsa/releases/download/${lr}v3.1.6${lp}/EasyRSA-${lr}3.1.6${lp}.tgz ${nc}"
 #read link
-link="https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz"
+link="https://github.com/OpenVPN/easy-rsa/releases/download/v3.1.6/EasyRSA-3.1.6.tgz"
 sleep 0.2s && echo -e "${lo}Downloading EasyRSA folder...${nc}"
 wget -q -P ~/ $link && sleep 0.2s && echo -e "${lg}++ EasyRSA downloaded to home folder successfully${nc}" || echo -e "${lr}-- failed to download EasyRSA, make sure you copied the correct link!${nc}"
 sleep 0.2s && echo -e "${lo}unzipping EasyRSA folder...${nc}"
@@ -236,10 +236,10 @@ sudo cp /etc/openvpn/ca.crt ~/client-configs/keys/ && sleep 0.2s && echo -e "${l
 
 
 #Configuring the OpenVPN Service
-sleep 0.2s && echo -e "${lo}Copying ${lp}server.conf.gz ${lo}to ${lp}/etc/openvpn/${lo}...${nc}"
-sudo cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz /etc/openvpn/ && sleep 0.2s && echo -e "${lg}++ ${lp}server.conf.gz ${lg}has been copied successfully${nc}" || echo -e "${lr}-- ${lp}server.conf.gz ${lr}couldn't be copied, try again!${nc}"
-sleep 0.2s && echo -e "${lo}Uncompressing ${lp}server.conf.gz${lo}...${nc}"
-sudo gzip -d /etc/openvpn/server.conf.gz && sleep 0.2s && echo -e "${lg}++ ${lp}server.conf.gz ${lg}has been successfully uncompressed${nc}" || echo -e "${lr}-- ${lp}server.conf.gz ${lr}couldn't be uncompressed, try again!${nc}"
+sleep 0.2s && echo -e "${lo}Copying ${lp}server.conf ${lo}to ${lp}/etc/openvpn/${lo}...${nc}"
+sudo cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf /etc/openvpn/ && sleep 0.2s && echo -e "${lg}++ ${lp}server.conf ${lg}has been copied successfully${nc}" || echo -e "${lr}-- ${lp}server.conf ${lr}couldn't be copied, try again!${nc}"
+# sleep 0.2s && echo -e "${lo}Uncompressing ${lp}server.conf.gz${lo}...${nc}"
+# sudo gzip -d /etc/openvpn/server.conf.gz && sleep 0.2s && echo -e "${lg}++ ${lp}server.conf.gz ${lg}has been successfully uncompressed${nc}" || echo -e "${lr}-- ${lp}server.conf.gz ${lr}couldn't be uncompressed, try again!${nc}"
 sleep 0.2s && echo -e "${lo}Editing ${lp}server.conf ${lo}file...${nc}"
 sudo sed -i 's/;tls-auth ta.key 0/tls-auth ta.key 0/' /etc/openvpn/server.conf && sleep 0.2s && echo -e "${lg}++ ${lp}tls-auth ${lg}successfully uncommented${nc}" || echo -e "${lr}-- ${lp}tls-auth ${lr}couldn't be modified, try again!${nc}"
 sudo sed -i 's/;cipher AES-256-CBC/cipher AES-256-CBC/' /etc/openvpn/server.conf && sleep 0.2s && echo -e "${lg}++ ${lp}cipher AES-256-CBC ${lg}successfully uncommented${nc}" || echo -e "${lr}-- ${lp}cipher AES-256-CBC ${lr}couldn't be modified, try again!${nc}"
@@ -291,6 +291,11 @@ sleep 0.2s && echo -e "${lo}Creating the Client Configuration Infrastructure...$
 mkdir -p ~/client-configs/files && sleep 0.2s && echo -e "${lg}++ ${lp}files ${lg} directory has been successfully created inside ${lp}~/client-configs/${nc}" || echo -e "${lr}-- couldn't create ${lp}files ${lr}inside ${lp}~/client-configs/${lr}, try again!${nc}"
 cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf ~/client-configs/base.conf && sleep 0.2s && echo -e "${lg}++ ${lp}client.conf ${lg}copied to ${lp}~/client-configs${nc}" || echo -e "${lr}-- ${lp}client.conf ${lr}couldn't be copied to ${lp}~/client-configs${nc}"
 #sleep 0.2s && read -p "[1;34mPlease enter your server's ip:[0m " myserverip
+if ! dpkg -s net-tools > /dev/null 2>&1; then
+	sudo apt-get install net-tools -y && sleep 0.2s && echo -e "${lg}++ net-tools was successfully installed${nc}" || echo -e "${lr}-- failed to install net-tools${nc}"
+else
+	sleep 0.2s && echo -e "${lg}++ net-tools is already installed, proceeding..${nc}"
+fi
 myserverip=$(ifconfig | grep inet | cut -d " " -f10 | head -1)
 sed -i "s/remote my-server-1 1194/remote $myserverip 443/" ~/client-configs/base.conf && sleep 0.2s && echo -e "${lg}++ your server ip successfully configured${nc}" || echo -e "${lr}-- you server ip couldn't be configured properly, try again!${nc}"
 sed -i "s/proto udp/proto tcp/" ~/client-configs/base.conf && sleep 0.2s && echo -e "${lg}++ Protocol successfully changed to ${lp}TCP${nc}" || echo -e "${lr}-- Protocoal couldn't be changed, try again!"
@@ -322,7 +327,7 @@ privkey1="no"
 unique=$(ls -1 ~/EasyRSA*/pki/issued/| sed -e 's/\..*$//'| tr '\n' ' ')
         read_connection(){
 		sleep 0.2 && read -p "[1;34mRename the new connection pack ( Forbidden Names: [1;31m$unique[1;34m):[0m " connection_pack
-                if [[ -f "/home/$USER/EasyRSA-3.0.8/pki/issued/$connection_pack.crt" ]] || [[ -f "/$USER/EasyRSA-3.0.8/pki/issued/$connection_pack.crt" ]]
+                if [[ -f "/home/$USER/EasyRSA-3.1.6/pki/issued/$connection_pack.crt" ]] || [[ -f "/$USER/EasyRSA-3.1.6/pki/issued/$connection_pack.crt" ]]
                 then
                         echo -e "${lr}This name is used for another package or can't be assigned, try another name!${nc}"
                         read_connection
@@ -357,7 +362,7 @@ cd ~/client-configs && sudo ./make_config.sh $connection_pack && cd ~/ && sleep 
 revoke_crt(){
 	element=$(ls -1 ~/client-configs/files/ | sed -e 's/\..*$//'| tr '\n' ' ')
 	sleep 0.2s && read -p "[1;34mWhich certificate do you want to revoke? ( Available Certs: [1;35m$element[1;34m)[0m " validate
-	if [[ -f "/$USER/EasyRSA-3.0.8/pki/issued/$validate.crt" ]] || [[ -f "/home/$USER/EasyRSA-3.0.8/pki/issued/$validate.crt" ]]
+	if [[ -f "/$USER/EasyRSA-3.1.6/pki/issued/$validate.crt" ]] || [[ -f "/home/$USER/EasyRSA-3.1.6/pki/issued/$validate.crt" ]]
 	then
 		cd ~/EasyRSA*/ && yes 'yes' | ./easyrsa revoke $validate &>/dev/null && cd ~/ && sleep 0.2s && echo -e "${lg}++ ${lp}$validate ${lg}has been successfully revoked${nc}" || echo -e "${lr}-- ${lp}$validate ${lr}certificate couldn't be revoked, Please try again!${nc}"
 		cd ~/EasyRSA*/ && ./easyrsa gen-crl &>/dev/null && sleep 0.2s && echo -e "${lg}++ ${lp}crl.pem ${lg}list has been generated${nc}" || echo -e "${lr}-- ${lp}clr.pem ${lr}list couldn't be created, try again!${nc}"
@@ -382,7 +387,7 @@ static_ip() (
 
 element2=$(ls -1 ~/client-configs/files/ | sed -e 's/\..*$//'| tr '\n' ' ')
 sleep 0.2s && read -p "[1;34mWhich certificate do you want to assign a static IP for? ( Available Certs: [1;35m$element2[1;34m)[0m " validate1
-if [[ -f "/$USER/EasyRSA-3.0.8/pki/issued/$validate1.crt" ]] || [[ -f "/home/$USER/EasyRSA-3.0.8/pki/issued/$validate1.crt" ]]
+if [[ -f "/$USER/EasyRSA-3.1.6/pki/issued/$validate1.crt" ]] || [[ -f "/home/$USER/EasyRSA-3.1.6/pki/issued/$validate1.crt" ]]
 then
 	crt_name=$(openssl x509 -subject -noout -in ~/EasyRSA*/pki/issued/$validate1.crt | cut -d " " -f3)
 	sleep 0.2s && echo -e "${lo}You are about to assign ${lp}$validate1${lo} package with common name of ${lp}$crt_name${lo} a static IP...${nc}"
