@@ -12,9 +12,13 @@ Your support is greatly appreciated!
 
 ## Usage
 
-To use the script, simply download it to your VPS and run it with the following command:
+To use the script, make sure you are the `root` user:
 
 ```
+git clone https://github.com/yu3ufe/vps2vpn.git
+cd vps2vpn
+mv vps2vpn.sh ~/
+cd ~/
 bash vps2vpn.sh
 ```
 
